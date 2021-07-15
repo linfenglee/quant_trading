@@ -9,7 +9,6 @@ import json
 import plotly
 import plotly.graph_objs as go
 import tushare as ts
-import pandas_datareader.data as web
 
 
 HGT_DATE = datetime(2014, 11, 17)  # HGT Start Date
@@ -18,6 +17,8 @@ SGT_DATE = datetime(2016, 12, 5)   # SGT Start Date
 
 class NorthBound(object):
     """"""
+
+    os.chdir("./north_bound/")
 
     def __init__(
             self, start_date=None, end_date=None, query_limit=100
@@ -42,7 +43,7 @@ class NorthBound(object):
     def init_ts():
         """"""
 
-        with open("../data_key.json") as f:
+        with open("../../data_key.json") as f:
             data_key = json.load(f)
 
         pro = ts.pro_api(data_key["tushare"]["token"])
@@ -122,8 +123,8 @@ class NorthBound(object):
     def get_record_df():
         """"""
 
-        if os.path.exists("./hsgt.csv"):
-            df = pd.read_csv("./hsgt.csv")
+        if os.path.exists("hsgt.csv"):
+            df = pd.read_csv("hsgt.csv")
             df["trade_date"] = pd.to_datetime(df["trade_date"])
             df.set_index("trade_date", inplace=True)
         else:
@@ -149,6 +150,8 @@ class NorthBound(object):
 
         trade_dates = self.get_trade_dates()
 
+        hs300 = self.get_index_price()
+
         if not df.empty:
             trade_dates = trade_dates[trade_dates > df.index[-1]]
 
@@ -173,10 +176,10 @@ class NorthBound(object):
         if error_dates:
             print(error_dates)
 
-        hs300.to_csv("hs300.csv")
         df.to_csv("hsgt.csv")
+        hs300.to_csv("hs300.csv")
 
-        return hs300, df
+        return df, error_dates
 
     def main_many_records(self):
         """"""
@@ -217,4 +220,4 @@ if __name__ == "__main__":
 
     north_bound = NorthBound(start_date=sd, end_date=ed)
 
-    hs300, hs_df = north_bound.main_one_record()
+    hs_df, errors = north_bound.main_one_record()
