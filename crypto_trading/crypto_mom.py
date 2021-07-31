@@ -3,6 +3,8 @@ from typing import List, Dict, Tuple
 from datetime import datetime, timedelta
 import pandas as pd
 import ccxt
+import plotly
+import plotly.graph_objs as go
 
 
 class MomEngine(object):
@@ -126,15 +128,16 @@ class MomEngine(object):
 
         return pre_dt, cur_dt
 
-    def calc_return(self, series: pd.Series) -> float:
+    def calc_return(self, series: pd.Series) -> Tuple:
         """"""
 
         pre_dt, cur_dt = self.get_datetime()
         pre_price, cur_price = series[pre_dt], series[cur_dt]
+        calc_series = series[series.index >= pre_dt] / pre_price
 
         rtn = (cur_price - pre_price) / pre_price
 
-        return rtn
+        return rtn, calc_series
 
     def show_result(
             self, calc_date: datetime, rtn_dict: Dict
@@ -157,21 +160,50 @@ class MomEngine(object):
 
         print(output)
 
+    @staticmethod
+    def show_plot(trace_dict: Dict) -> None:
+        """"""
+
+        traces = []
+        for symbol, series in trace_dict.items():
+            traces.append(
+                go.Scatter(
+                    x=series.index, y=series.values,
+                    mode="lines", name=symbol
+                )
+            )
+
+        layout = go.Layout(
+            legend={"x": 1, "y": 1},
+            title="Crypto Momentum"
+        )
+        fig = go.Figure(data=traces, layout=layout)
+
+        plotly.offline.plot(fig, filename="crypto_mom.html")
+
     def mom_main(self):
         """"""
 
         rtn_dict = {}
+        trace_dict = {}
+        dts = []
         for symbol in self.symbols:
 
             df = self.fetch_df(symbol)
 
-            calc_dt = df.index.to_numpy()[-1]
+            dts.append(df.index.to_numpy()[-1])
 
-            rtn = self.calc_return(df["close"])
+            rtn, prices = self.calc_return(df["close"])
 
             rtn_dict[symbol] = round(rtn, 5)
+            trace_dict[symbol] = prices
 
-        self.show_result(calc_dt, rtn_dict)
+        if not len(list(set(dts))) == 1:
+            print(f"Last Dates: {set(dts)}")
+
+        self.show_result(dts[0], rtn_dict)
+
+        self.show_plot(trace_dict)
 
         return rtn_dict
 
