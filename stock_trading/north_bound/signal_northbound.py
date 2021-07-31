@@ -18,7 +18,7 @@ SGT_DATE = datetime(2016, 12, 5)   # SGT Start Date
 class NorthBound(object):
     """"""
 
-    os.chdir("./north_bound/")
+    # os.chdir("./north_bound/")
 
     def __init__(
             self, start_date=None, end_date=None, query_limit=100
