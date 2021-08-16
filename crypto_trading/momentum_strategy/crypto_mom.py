@@ -213,7 +213,8 @@ if __name__ == "__main__":
 
     crypto_ex = "huobipro"
     tickers = [
-        "BTC/USDT", "ETH/USDT", "DOT/USDT", "FLOW/USDT", "SOL/USDT"
+        "BTC/USDT", "ETH/USDT", "DOT/USDT",
+        "FLOW/USDT", "SOL/USDT", "UNI/USDT"
     ]
     calc_interval = "1h"
     calc_window = 20 * 24

@@ -1,8 +1,7 @@
 import os
-import time
+from time import sleep
 from typing import Tuple
-from datetime import datetime
-import numpy as np
+from datetime import datetime, time, timedelta
 import pandas as pd
 from pandas import DataFrame
 import json
@@ -13,6 +12,8 @@ import tushare as ts
 
 HGT_DATE = datetime(2014, 11, 17)  # HGT Start Date
 SGT_DATE = datetime(2016, 12, 5)   # SGT Start Date
+
+UPDATE_TIME = time(19, 0)
 
 
 class NorthBound(object):
@@ -25,19 +26,36 @@ class NorthBound(object):
     ):
         """"""
 
-        if start_date is None:
-            self.s_date = HGT_DATE
-        else:
-            self.s_date = start_date
+        self.s_date = self.get_start_date(start_date)
 
-        if end_date is None:
-            self.e_date = datetime.now()
-        else:
-            self.e_date = end_date
+        self.e_date = self.get_end_date(end_date)
 
         self.q_limit = query_limit
 
         self.pro = self.init_ts()
+
+    @staticmethod
+    def get_start_date(start_date) -> datetime:
+        """"""
+
+        if start_date is None:
+            s_date = HGT_DATE
+        else:
+            s_date = start_date
+        return s_date
+
+    @staticmethod
+    def get_end_date(end_date) -> datetime:
+        """"""
+        if end_date is None:
+            if datetime.now().time() <= UPDATE_TIME:
+                e_date = datetime.now() - timedelta(days=1)
+            else:
+                e_date = datetime.now()
+        else:
+            e_date = end_date
+
+        return e_date
 
     @staticmethod
     def init_ts():
@@ -169,7 +187,7 @@ class NorthBound(object):
             count += 1
             self.show_progress(count, total)
 
-            time.sleep(60 / self.q_limit)
+            sleep(60 / self.q_limit)
 
         self.hsgt_plot(df)
 
@@ -200,7 +218,7 @@ class NorthBound(object):
             count += 1
             self.show_progress(count, total)
 
-            time.sleep(60 / self.q_limit)
+            sleep(60 / self.q_limit)
 
         self.hsgt_plot(df)
 
