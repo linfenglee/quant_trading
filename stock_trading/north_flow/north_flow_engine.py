@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import tushare as ts
 import plotly
+from plotly.subplots import make_subplots
 import plotly.graph_objs as go
 
 
@@ -56,29 +57,42 @@ class NorthFlowEngine(object):
 
     @staticmethod
     def north_flow_plot(
-            trade_dates: List, h_series: pd.Series, s_series: pd.Series) -> None:
+            trade_dates: List,
+            h_net_series: pd.Series, s_net_series: pd.Series,
+            h_rel_series: pd.Series, s_rel_series: pd.Series
+    ) -> None:
         """"""
 
         start_trade = trade_dates[0]
         end_trade = trade_dates[-1]
         trade_length = len(trade_dates)
-        h_trace = go.Bar(
-            x=h_series.index, y=h_series.values,
+
+        subtitle1 = f"North Flow Net Amount: {start_trade} - {end_trade} ({trade_length} trading days)"
+        subtitle2 = f"North Flow Relative Amount: {start_trade} - {end_trade} ({trade_length} trading days)"
+        fig = make_subplots(rows=2, cols=1, subplot_titles=(subtitle1, subtitle2))
+
+        h_net_trace = go.Bar(
+            x=h_net_series.index, y=h_net_series.values,
             name="Shanghai"
         )
-        s_trace = go.Bar(
-            x=s_series.index, y=s_series.values,
+        s_net_trace = go.Bar(
+            x=s_net_series.index, y=s_net_series.values,
             name="Shenzhen"
         )
-        layout = go.Layout(
-            legend={"x": 1, "y": 1},
-            title=f"North Flow: {start_trade} - {end_trade} ({trade_length} trading days)"
+        h_rel_trace = go.Bar(
+            x=h_rel_series.index, y=h_rel_series.values,
+            name="Shanghai"
         )
-        fig = go.Figure(data=[h_trace, s_trace], layout=layout)
+        s_rel_trace = go.Bar(
+            x=s_rel_series.index, y=s_rel_series.values,
+            name="Shenzhen"
+        )
+        fig.add_traces([h_net_trace, s_net_trace], rows=1, cols=1)
+        fig.add_traces([h_rel_trace, s_rel_trace], rows=2, cols=1)
 
         plotly.offline.plot(fig, filename="north_flow.html")
 
-    def north_flow_main(self) -> Tuple:
+    def north_flow_main(self) -> None:
         """"""
 
         trade_dates = self.get_trade_dates()
@@ -93,12 +107,18 @@ class NorthFlowEngine(object):
             h_data = pd.concat([h_data, h_df], ignore_index=True)
             s_data = pd.concat([s_data, s_df], ignore_index=True)
 
-        h_series = h_data.groupby("name")["net_amount"].sum().sort_values(ascending=False)
-        s_series = s_data.groupby("name")["net_amount"].sum().sort_values(ascending=False)
+        h_net_series = h_data.groupby("name")["net_amount"].sum().sort_values(ascending=False)
+        s_net_series = s_data.groupby("name")["net_amount"].sum().sort_values(ascending=False)
 
-        self.north_flow_plot(dts, h_series, s_series)
+        h_sum_series = h_data.groupby("name")["amount"].sum()
+        s_sum_series = s_data.groupby("name")["amount"].sum()
 
-        return h_series, s_series
+        h_rel_series = (h_net_series / h_sum_series).sort_values(ascending=False)
+        s_rel_series = (s_net_series / s_sum_series).sort_values(ascending=False)
+
+        self.north_flow_plot(
+            dts, h_net_series, s_net_series, h_rel_series, s_rel_series
+        )
 
 
 if __name__ == "__main__":
@@ -108,5 +128,5 @@ if __name__ == "__main__":
     s_date = e_date - timedelta(days=5)
     engine = NorthFlowEngine(s_date, e_date)
 
-    sh_series, sz_series = engine.north_flow_main()
+    engine.north_flow_main()
 
