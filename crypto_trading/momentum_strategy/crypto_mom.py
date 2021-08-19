@@ -11,7 +11,9 @@ class MomEngine(object):
     """"""
 
     def __init__(
-            self, exchange: str,
+            self,
+            exchange: str,
+            proxy: bool,
             symbols: List,
             interval: str,
             window: int
@@ -22,7 +24,7 @@ class MomEngine(object):
             print(f"{exchange} is not in exchange list.")
             sys.exit()
 
-        self.engine = self.init_engine(exchange)
+        self.engine = self.init_engine(exchange, proxy)
 
         if (
                 (not self.check_symbols(symbols)) or
@@ -35,10 +37,16 @@ class MomEngine(object):
         self.window = window
 
     @staticmethod
-    def init_engine(exchange: str):
+    def init_engine(exchange: str, proxy: bool):
         """"""
 
-        engine = eval(f"ccxt.{exchange}()")
+        exec_code = f"ccxt.{exchange}()"
+        engine = eval(exec_code)
+        if proxy:
+            engine.proxies = {
+                'http': 'http://127.0.0.1:41091',
+                'https': 'https://127.0.0.1:41091',
+            }
         return engine
 
     @staticmethod
@@ -46,6 +54,7 @@ class MomEngine(object):
         """"""
 
         exchange_list = ccxt.exchanges
+
         if exchange in exchange_list:
             return True
         else:
@@ -211,7 +220,10 @@ class MomEngine(object):
 if __name__ == "__main__":
     """"""
 
+    # crypto_ex = "binance"
     crypto_ex = "huobipro"
+    # crypto_ex = "okex"
+    proxies = True
     tickers = [
         "BTC/USDT", "ETH/USDT", "DOT/USDT",
         "FLOW/USDT", "SOL/USDT", "UNI/USDT"
@@ -220,7 +232,7 @@ if __name__ == "__main__":
     calc_window = 20 * 24
 
     mom_engine = MomEngine(
-        crypto_ex, tickers, calc_interval, calc_window
+        crypto_ex, proxies, tickers, calc_interval, calc_window
     )
 
     symbol_dict = mom_engine.mom_main()
