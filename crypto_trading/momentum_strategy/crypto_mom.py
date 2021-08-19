@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import ccxt
 import plotly
+from plotly.subplots import make_subplots
 import plotly.graph_objs as go
 
 
@@ -169,24 +170,35 @@ class MomEngine(object):
 
         print(output)
 
-    @staticmethod
-    def show_plot(trace_dict: Dict) -> None:
+    def show_plot(
+            self, calc_date: datetime,
+            rtn_dict: Dict, trace_dict: Dict
+    ) -> None:
         """"""
 
-        traces = []
+        subtitle1 = f"Date: {calc_date} | Crypto Return | Interval: {self.interval} | Window: {self.window}"
+        subtitle2 = f"Date: {calc_date} | Crypto Momentum | Interval: {self.interval} | Window: {self.window}"
+        fig = make_subplots(
+            rows=2, cols=1, subplot_titles=(subtitle1, subtitle2)
+        )
+
+        rtn_series = pd.Series(rtn_dict).sort_values(ascending=False)
+        rtn_trace = go.Bar(
+            x=rtn_series.index, y=rtn_series.values,
+            name="Crypto"
+        )
+
+        trend_traces = []
         for symbol, series in trace_dict.items():
-            traces.append(
+            trend_traces.append(
                 go.Scatter(
                     x=series.index, y=series.values,
                     mode="lines", name=symbol
                 )
             )
 
-        layout = go.Layout(
-            legend={"x": 1, "y": 1},
-            title="Crypto Momentum"
-        )
-        fig = go.Figure(data=traces, layout=layout)
+        fig.add_traces([rtn_trace], rows=1, cols=1)
+        fig.add_traces(trend_traces, rows=2, cols=1)
 
         plotly.offline.plot(fig, filename="crypto_mom.html")
 
@@ -212,7 +224,7 @@ class MomEngine(object):
 
         self.show_result(dts[0], rtn_dict)
 
-        self.show_plot(trace_dict)
+        self.show_plot(dts[0], rtn_dict, trace_dict)
 
         return rtn_dict
 
