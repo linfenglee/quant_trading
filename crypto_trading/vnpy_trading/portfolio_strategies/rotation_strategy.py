@@ -13,7 +13,7 @@ class RotationStrategy(StrategyTemplate):
     author = "LarryLee"
 
     price_add = 5
-    ma_interval = 10
+    ma_interval = 7
     cal_interval = 20
     change_interval = 24
     fixed_capital = 1_000_000
