@@ -1,3 +1,4 @@
+from typing import Tuple
 from datetime import datetime
 import json
 import pandas as pd
@@ -66,7 +67,7 @@ class WeekEffectEngine(object):
         self.index_df["regime"] = (self.index_df["close"] - self.index_df["ma"] > 0)
 
     @staticmethod
-    def calc_statistics(calc_obj, pos_calc_obj):
+    def calc_statistics(calc_obj, pos_calc_obj) -> Tuple:
         """"""
         mean_series = calc_obj["pct_chg"].mean()
         median_series = calc_obj["pct_chg"].median()
@@ -77,7 +78,7 @@ class WeekEffectEngine(object):
     @staticmethod
     def statistic_plot(
             fig, row_num, mean_series, median_series, pos_series
-    ):
+    ) -> go.Figure:
         """"""
 
         mean_trace = go.Bar(
@@ -135,7 +136,7 @@ class WeekEffectEngine(object):
 
         pass
 
-    def wealth_plot(self):
+    def wealth_plot(self) -> None:
         """"""
 
         wealth_trace = go.Scatter(
@@ -156,7 +157,7 @@ class WeekEffectEngine(object):
 
         plotly.offline.plot(fig, filename="week_effect_backtest.html")
 
-    def back_testing(self):
+    def back_testing(self) -> None:
         """"""
 
         dts = self.index_df.index
@@ -197,5 +198,9 @@ if __name__ == "__main__":
     """"""
 
     engine = WeekEffectEngine()
-    # engine.statistic_analysis()
+
+    # get whole, bull and bear market statistics
+    engine.statistic_analysis()
+
+    # back test week effect strategy
     engine.back_testing()
