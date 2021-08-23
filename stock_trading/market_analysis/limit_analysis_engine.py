@@ -84,6 +84,16 @@ class MarketAnalysisEngine(object):
 
         pass
 
+    def money_flow_analysis(self):
+        """"""
+
+        pass
+
+    def institute_analysis(self):
+        """"""
+
+        pass
+
 
 if __name__ == "__main__":
     """"""
