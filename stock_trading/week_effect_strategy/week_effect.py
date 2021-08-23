@@ -235,9 +235,10 @@ class WeekEffectEngine(object):
             else:
                 cur_position = pre_position
 
-        hline = "=" * 60 + "\n"
-        line1 = f"Date: {cur_dt} \t\t\t| Week Day: {cur_week_day}\n"
-        line2 = f"Bull Regime: {cur_regime} \t\t\t| Position: {cur_position}\n"
+        str_dt = cur_dt.strftime("%Y-%m-%d")
+        hline = "=" * 40 + "\n"
+        line1 = f"Date: {str_dt} \t| Week Day: {cur_week_day}\n"
+        line2 = f"Bull Regime: {cur_regime} \t| Position: {cur_position}\n"
 
         output = hline + line1 + line2 + hline
         print(output)
