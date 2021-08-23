@@ -1,5 +1,5 @@
 from typing import Tuple
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import pandas as pd
 import numpy as np
@@ -10,6 +10,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objs as go
 
 
+START_DATE = datetime(2005, 1, 4)
 DROP_COLS = ["ts_code", "pre_close", "change", "vol", "amount"]
 SUBTITLES = (
     "Mean", "Median", "Positive Percentage",
@@ -44,7 +45,11 @@ class WeekEffectEngine(object):
     def get_index_df(self, index_code: str) -> pd.DataFrame:
         """"""
 
-        index_df = self.pro.index_daily(ts_code=index_code)
+        start_dt = START_DATE.strftime("%Y%m%d")
+        end_dt = datetime.now().strftime("%Y%m%d")
+        index_df = self.pro.index_daily(
+            ts_code=index_code, start_date=start_dt, end_date=end_dt
+        )
 
         index_df["trade_date"] = pd.to_datetime(index_df["trade_date"])
         index_df["week_day"] = index_df["trade_date"].apply(lambda dt: dt.isoweekday())
@@ -193,14 +198,66 @@ class WeekEffectEngine(object):
 
         self.wealth_plot()
 
+    def get_trade_dates(self):
+        """"""
+
+        end_dt = datetime.now().strftime("%Y%m%d")
+        start_dt = (datetime.now() - timedelta(days=50)).strftime("%Y%m%d")
+        date_df = self.pro.trade_cal(
+            exchange="", start_date=start_dt, end_date=end_dt
+        )
+
+        trade_df = date_df[date_df["is_open"] == 1]
+        trade_dates = pd.to_datetime(trade_df["cal_date"]).to_numpy()
+
+        return trade_dates
+
+    def current_output(self) -> None:
+        """"""
+
+        pre_dt, cur_dt = self.index_df.index[-2], self.index_df.index[-1]
+        cur_regime = self.index_df.loc[cur_dt, "regime"]
+        cur_week_day = cur_dt.isoweekday()
+        pre_position = self.index_df.loc[pre_dt, "position"]
+
+        if cur_regime:
+            if cur_week_day in [1, 5]:
+                cur_position = 1
+            elif cur_week_day in [2, 4]:
+                cur_position = 0
+            else:
+                cur_position = pre_position
+        else:
+            if cur_week_day in [2, 3]:
+                cur_position = 1
+            elif cur_week_day in [1, 4]:
+                cur_position = 0
+            else:
+                cur_position = pre_position
+
+        hline = "=" * 60 + "\n"
+        line1 = f"Date: {cur_dt} \t\t\t| Week Day: {cur_week_day}\n"
+        line2 = f"Bull Regime: {cur_regime} \t\t\t| Position: {cur_position}\n"
+
+        output = hline + line1 + line2 + hline
+        print(output)
+
 
 if __name__ == "__main__":
     """"""
 
-    engine = WeekEffectEngine()
+    ts_code = "399300.SZ"
+    ma_value = 15
+
+    engine = WeekEffectEngine(
+        index_code=ts_code, ma_window=ma_value
+    )
 
     # get whole, bull and bear market statistics
     engine.statistic_analysis()
 
     # back test week effect strategy
     engine.back_testing()
+
+    # output current situation
+    engine.current_output()
