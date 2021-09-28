@@ -1,11 +1,15 @@
 import json
 from datetime import datetime
+import numpy as np
 import pandas as pd
 import tushare as ts
 import plotly
 from plotly.subplots import make_subplots
 import plotly.graph_objs as go
 import akshare as ak
+
+
+LIMIT_DATE = datetime(2020, 1, 6)
 
 
 class MarketAnalysisEngine(object):
@@ -79,6 +83,67 @@ class MarketAnalysisEngine(object):
 
         self.limit_industry_plot(str_dt, up_series, down_series)
 
+    @staticmethod
+    def limit_up_con_plot(df: pd.DataFrame) -> None:
+        """"""
+
+        trace1 = go.Scatter(
+            x=df.index, y=df["con"], mode="lines",
+            name="Limit Up Continuity"
+        )
+        trace2 = go.Scatter(
+            x=df.index, y=df["trade_con"], mode="lines",
+            name="Limit Up Tradable Continuity"
+        )
+        layout = go.Layout(
+            legend={"x": 1, "y": 1},
+            title="Limit Up Continuity Analysis"
+        )
+        fig = go.Figure(data=[trace1, trace2], layout=layout)
+
+        plotly.offline.plot(fig, filename="luc_analysis.html")
+
+    def limit_up_con_analysis(self):
+        """"""
+
+        limit_dts = self.dts[pd.to_datetime(self.dts) >= LIMIT_DATE]
+
+        pre_lus = None
+        df = pd.DataFrame(columns=["con", "trade_con"])
+        for i in range(len(limit_dts) - 1):
+
+            pre_dt, cur_dt = limit_dts[i], limit_dts[i+1]
+            str_cur_dt = pd.to_datetime(cur_dt).strftime("%Y%m%d")
+
+            try:
+                if pre_lus is None:
+                    str_pre_dt = pd.to_datetime(pre_dt).strftime("%Y%m%d")
+                    pre_df = ak.stock_em_zt_pool(date=str_pre_dt)
+                    pre_lus = pre_df["代码"].to_numpy()
+                up_df = ak.stock_em_zt_pool(date=str_cur_dt)
+                cur_lus = up_df["代码"].to_numpy()
+                up_df["首次封板时间"] = up_df["首次封板时间"].astype("int")
+                cur_lus_trade = up_df.loc[up_df["首次封板时间"] > 93000]["代码"].to_numpy()
+                if len(pre_lus) == 0 or len(cur_lus) == 0:
+                    df.loc[cur_dt] = [0, 0]
+                else:
+                    success = np.intersect1d(pre_lus, cur_lus)
+                    trade_success = np.intersect1d(pre_lus, cur_lus_trade)
+                    con = len(success) / len(pre_lus)
+                    con_trade = len(trade_success) / len(pre_lus)
+                    df.loc[cur_dt] = [con, con_trade]
+
+                pre_lus = cur_lus
+
+            except TypeError:
+                print(f"no record for {cur_dt}")
+                continue
+
+        df.to_csv("lu_con.csv")
+        # df.index = pd.to_datetime(df.index)
+
+        self.limit_up_con_plot(df=df)
+
     def lhb_analysis(self):
         """"""
 
@@ -100,4 +165,6 @@ if __name__ == "__main__":
 
     dt = datetime.now()
     engine = MarketAnalysisEngine(dt)
-    engine.limit_industry_analysis()
+
+    # engine.limit_industry_analysis()
+    engine.limit_up_con_analysis()

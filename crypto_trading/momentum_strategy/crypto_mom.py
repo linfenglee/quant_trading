@@ -238,7 +238,8 @@ if __name__ == "__main__":
     proxies = True
     tickers = [
         "BTC/USDT", "ETH/USDT", "DOT/USDT",
-        "FLOW/USDT", "SOL/USDT", "UNI/USDT"
+        "FLOW/USDT", "SOL/USDT", "UNI/USDT",
+        "ATOM/USDT",
     ]
     calc_interval = "1h"
     calc_window = 20 * 24
